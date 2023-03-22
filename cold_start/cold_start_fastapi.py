@@ -8,7 +8,7 @@ import os
 from starlette.staticfiles import StaticFiles
 
 app = FastAPI()
-router = APIRouter()
+router = APIRouter(prefix='/stackoverflow')
 
 # Allowing cross-origin requests for demo-purposes. This allows the single-page
 # app to communicate with the API backend without getting 404s.
@@ -93,10 +93,11 @@ GALAXY_DIR = os.path.join(ROOT_DIR, "..", "galaxy/build")
 print(os.path.join(GALAXY_DIR, "index.html"))
 
 
-# api_prefix = os.environ.get("API_PREFIX", "/")
-app.include_router(router, prefix="")
+app.include_router(router)
 
 
-app.mount("/data", StaticFiles(directory=DATA_DIR, html=True), name="data")
+app.mount("/stackoverflow/data",
+          StaticFiles(directory=DATA_DIR, html=True), name="data")
 
-app.mount("/", StaticFiles(directory=GALAXY_DIR, html=True), name="frontend")
+app.mount("/stackoverflow", StaticFiles(directory=GALAXY_DIR,
+          html=True), name="frontend")

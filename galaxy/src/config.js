@@ -1,4 +1,4 @@
 export default {
-    dataUrl: '/',
-    apiUrl: '/predict'
+    dataUrl: '/stackoverflow/',
+    apiUrl: '/stackoverflow/predict'
 };
