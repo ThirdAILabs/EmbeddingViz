@@ -1,0 +1,20 @@
+{
+  "embed_path": "/share/embeddings/data/food/embeddings.npy",
+  "neighbours": 25,
+  "threshold": 200,
+  "output_dir": "/share/embeddings/copy_EmbeddingViz/EmbeddingViz/data",
+  "version": 1,
+  "catalog_path": "/share/embeddings/data/food/recipes.csv",
+  "strong_column_names": [
+    "Name"
+  ],
+  "target_name": "RecipeId",
+  "query_column_name": "Name",
+  "model_path": "/share/embeddings/data/food/model.bolt",
+  "js_config_path": "/share/embeddings/copy_EmbeddingViz/EmbeddingViz/galaxy/src/config.js",
+  "layout_dir": "/share/embeddings/copy_EmbeddingViz/EmbeddingViz/layout",
+  "galaxy_dir": "/share/embeddings/copy_EmbeddingViz/EmbeddingViz/galaxy",
+  "api_prefix": "/food",
+  "description": "Cold Start Model for food recipes scraped from food.com. This model returns the recipes that matches with your queries the best.",
+  "name": "Food Recipes Search"
+}

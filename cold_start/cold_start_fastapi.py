@@ -2,12 +2,36 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, FileResponse
 from thirdai import bolt
 import os
+from starlette.staticfiles import StaticFiles
+from argparse import Namespace
+import json
 
+
+def init():
+    config_path = os.environ["config_path"]
+    with open(config_path, "r") as f:
+        config_data = json.load(f)
+        args = Namespace(**config_data)
+
+    network = bolt.UniversalDeepTransformer.load(args.model_path)
+    df = pd.read_csv(args.catalog_path)
+
+    df = df[args.strong_column_names + [args.target_name]]
+
+    for column in args.strong_column_names:
+        df[column] = df[column].fillna(f"missing value for {column} entry")
+
+    return network, df, args
+
+
+network, df, args = init()
+print(args)
 app = FastAPI()
-router = APIRouter()
+
+router = APIRouter(prefix=args.api_prefix)
 
 # Allowing cross-origin requests for demo-purposes. This allows the single-page
 # app to communicate with the API backend without getting 404s.
@@ -20,19 +44,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-network = bolt.UniversalDeepTransformer.load(os.environ["MODEL_PATH"])
-dataframe = pd.read_csv(os.environ["CATALOG_PATH"])
-
-# Use only few entries.
-df = dataframe.iloc[:, [0, 1, 2]]
-
-# Empty description causes JSON encode-decode errors. We simply replace it
-# with (empty).
-df["DESCRIPTION"] = df["DESCRIPTION"].fillna("(empty)")
-
 
 def top_k_products(query: str, top_k: int):
-    result = network.predict({"QUERY": query})
+    query = ' '.join([query[i:i+4] for i in range(len(query)-3)])
+    result = network.predict({args.query_column_name: query})
     #
     k = min(top_k, len(result) - 1)
     sorted_product_ids = result.argsort()[-k:][::-1]
@@ -64,11 +79,6 @@ def serialize(x):
     return str(x)
 
 
-@router.get("/")
-async def homepage(request: Request):
-    return HTMLResponse("<p>Make api calls to /predict for inference requests. <\/p>")
-
-
 @router.get("/predict")
 async def predict(query: str, k: int):
     try:
@@ -87,5 +97,19 @@ async def predict(query: str, k: int):
     return {"Result": result, "Status": status, "Message": message}
 
 
-api_prefix = os.environ.get("API_PREFIX", "/")
-app.include_router(router, prefix=api_prefix)
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DATA_DIR = os.path.join(ROOT_DIR, "..", "data")
+GALAXY_DIR = os.path.join(ROOT_DIR, "..", "galaxy/build")
+
+print(os.path.join(GALAXY_DIR, "index.html"))
+
+
+app.include_router(router)
+
+
+app.mount(f"{args.api_prefix}/data",
+          StaticFiles(directory=DATA_DIR, html=True), name="data")
+
+app.mount(f"{args.api_prefix}", StaticFiles(directory=GALAXY_DIR,
+          html=True), name="frontend")
