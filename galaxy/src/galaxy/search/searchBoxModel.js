@@ -16,9 +16,9 @@ function update_samples(response) {
     console.log(results);
     var searchResults = []
     for (var i = 0; i < results.length; i++) {
-        var title = results[i]["TITLE"];
+        var title = results[i]["title"];
         console.log(title);
-        var product_id = results[i]["PRODUCT_ID"];
+        var product_id = results[i]["id"];
         console.log(product_id);
         var query = product_id + '-' + title;
         console.log(query);
@@ -51,8 +51,8 @@ function searchBoxModel() {
 
         request(
             config.apiUrl + '?query=' + newText + "&k=5", {
-                responseType: 'json'
-            }).then(update_samples);
+            responseType: 'json'
+        }).then(update_samples);
 
         return;
 

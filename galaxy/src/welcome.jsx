@@ -6,7 +6,7 @@ export default class WelcomePage extends React.Component {
   render() {
     return (
       <div className='container'>
-         <Logo/>
+        <Logo />
 
         <h1>Galaxy</h1>
 
@@ -14,9 +14,9 @@ export default class WelcomePage extends React.Component {
 
         <div className='media-list'>
           <Destination description='Amazon product catalog (kaggle), cold-start model'
-                      href='#/galaxy/amazon-kaggle?l=1&v=v4'
-                      media='bower_fly_first.png'
-                      name='Amazon catalog'/>
+            href='#/galaxy/data?l=1&v=v1'
+            media='bower_fly_first.png'
+            name='Amazon catalog' />
 
         </div>
       </div>

@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, FileResponse
 from thirdai import bolt
 import os
+from starlette.staticfiles import StaticFiles
 
 app = FastAPI()
 router = APIRouter()
@@ -24,15 +25,17 @@ network = bolt.UniversalDeepTransformer.load(os.environ["MODEL_PATH"])
 dataframe = pd.read_csv(os.environ["CATALOG_PATH"])
 
 # Use only few entries.
-df = dataframe.iloc[:, [0, 1, 2]]
+# df = dataframe.iloc[:, [0, 1, 2]]
+df = dataframe[['id', 'title', 'question_body', 'answer_body']]
 
 # Empty description causes JSON encode-decode errors. We simply replace it
 # with (empty).
 df["question_body"] = df["question_body"].fillna("(empty)")
+df["answer_body"] = df["answer_body"].fillna("(empty)")
 
 
 def top_k_products(query: str, top_k: int):
-    result = network.predict({"QUERY": query})
+    result = network.predict({"query": query})
     #
     k = min(top_k, len(result) - 1)
     sorted_product_ids = result.argsort()[-k:][::-1]
@@ -64,11 +67,6 @@ def serialize(x):
     return str(x)
 
 
-@router.get("/")
-async def homepage(request: Request):
-    return HTMLResponse("<p>Make api calls to /predict for inference requests. <\/p>")
-
-
 @router.get("/predict")
 async def predict(query: str, k: int):
     try:
@@ -87,5 +85,18 @@ async def predict(query: str, k: int):
     return {"Result": result, "Status": status, "Message": message}
 
 
-api_prefix = os.environ.get("API_PREFIX", "/")
-app.include_router(router, prefix=api_prefix)
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DATA_DIR = os.path.join(ROOT_DIR, "..", "data")
+GALAXY_DIR = os.path.join(ROOT_DIR, "..", "galaxy/build")
+
+print(os.path.join(GALAXY_DIR, "index.html"))
+
+
+# api_prefix = os.environ.get("API_PREFIX", "/")
+app.include_router(router, prefix="")
+
+
+app.mount("/data", StaticFiles(directory=DATA_DIR, html=True), name="data")
+
+app.mount("/", StaticFiles(directory=GALAXY_DIR, html=True), name="frontend")
