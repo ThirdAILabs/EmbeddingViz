@@ -28,7 +28,7 @@ df = dataframe.iloc[:, [0, 1, 2]]
 
 # Empty description causes JSON encode-decode errors. We simply replace it
 # with (empty).
-df["DESCRIPTION"] = df["DESCRIPTION"].fillna("(empty)")
+df["question_body"] = df["question_body"].fillna("(empty)")
 
 
 def top_k_products(query: str, top_k: int):

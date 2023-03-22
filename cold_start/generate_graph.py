@@ -7,13 +7,16 @@
 import json
 import os
 import struct
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
 # reload the embeddings
+
+
 def main(args):
     product_embeddings = np.load(args.embed_path)
 
@@ -36,7 +39,7 @@ def main(args):
     print("Example: ", distances[:5], indices[:5])
 
     adj = defaultdict(set)
-    for u in range(nb):
+    for u in tqdm(range(nb)):
         for j in range(k):
             v = int(indices[u, j])
             # No self loops, distance has to be within something.
@@ -45,9 +48,9 @@ def main(args):
                 # adj[v].add(u)
 
     df = pd.read_csv(args.catalog)
-    df["TITLE"] = df["TITLE"].fillna("missing-title")
-    ids = df["PRODUCT_ID"].tolist()
-    titles = df["TITLE"].tolist()
+    df["title"] = df["title"].fillna("missing-title")
+    ids = df["id"].tolist()
+    titles = df["title"].tolist()
     pairs = zip(ids, titles)
     pairs = sorted(pairs, key=lambda x: int(x[0]))
 
@@ -56,7 +59,8 @@ def main(args):
 
     labels_path = os.path.join(args.output_dir, "labels.json")
     with open(labels_path, "w+") as labels_fp:
-        json.dump(labels, labels_fp, indent=True, ensure_ascii=True, allow_nan=False)
+        json.dump(labels, labels_fp, indent=True,
+                  ensure_ascii=True, allow_nan=False)
 
     # Write out links.bin
 
@@ -109,5 +113,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--catalog", type=str, required=True)
+    # parser.add_argument("--config_path", type=str, required=True)
     args = parser.parse_args()
+
+    # with open(args.config_path, "r") as f:
+    #     config_data = json.load(f)
+    #     args = Namespace(**config_data)
     main(args)
