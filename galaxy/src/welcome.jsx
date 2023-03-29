@@ -13,10 +13,10 @@ export default class WelcomePage extends React.Component {
         <p>Browse neighbourhood for embeddings coming out of the thirdai library.</p>
 
         <div className='media-list'>
-          <Destination description='Amazon product catalog (kaggle), cold-start model'
+          <Destination description='StackOverFlow catalog, cold-start model'
             href='#/galaxy/data?l=1&v=v1'
             media='bower_fly_first.png'
-            name='Amazon catalog' />
+            name='StackOverflow catalog' />
 
         </div>
       </div>
