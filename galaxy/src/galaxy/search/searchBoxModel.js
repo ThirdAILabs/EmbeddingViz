@@ -16,12 +16,20 @@ function update_samples(response) {
     console.log(results);
     var searchResults = []
     for (var i = 0; i < results.length; i++) {
-        var title = results[i]["title"];
-        console.log(title);
-        var product_id = results[i]["id"];
-        console.log(product_id);
-        var query = product_id + '-' + title;
+
+        console.log(config.target_name);
+        var query = results[i][config.target_name];
+        for (var column = 0; column < config.strong_column_names.length; column++) {
+            console.log(config.strong_column_names[column]);
+            query = query + "-" + results[i][config.strong_column_names[column]];
+        }
         console.log(query);
+        // var title = results[i]["title"];
+        // console.log(title);
+        // var product_id = results[i]["id"];
+        // console.log(product_id);
+        // var query = product_id + '-' + title;
+        // console.log(query);
         var search_results = scene.find(query);
         console.log(search_results);
         if (search_results.length > 0) {

@@ -2,7 +2,7 @@
 # the purprose of this demo, we randomly sample just 5% of the products and
 # build a cold-start search engine with UDT. Please download the dataset,
 # extract the downloaded file and specify the filepath via command line using
-# --catalog
+# --catalog_path
 
 import json
 import os
@@ -17,8 +17,22 @@ import pandas as pd
 # reload the embeddings
 
 
-def main(args):
-    product_embeddings = np.load(args.embed_path)
+def generate_label_data(df, strong_column_names, target_name):
+    for column in strong_column_names:
+        df[column] = df[column].fillna(f"missing value for {column} entry")
+
+    label_data = []
+    for index, row in df.iterrows():
+        datum = str(row[target_name])
+        for column in strong_column_names:
+            datum += f"-{row[column]}"
+        label_data.append(datum)
+
+    return label_data
+
+
+def generate_and_save_adj_matrix(embed_path, threshold, neighbours, output_dir):
+    product_embeddings = np.load(embed_path)
 
     import faiss
 
@@ -31,40 +45,23 @@ def main(args):
 
     # Since the element is part of the database, we want to add +1 to get n
     # neighbours, first nearest will the self-connection.
-    k = args.neighbours + 1
+    k = neighbours + 1
     k = min(k, nb)
 
     distances, indices = index.search(product_embeddings, k)  # sanity check
-
-    print("Example: ", distances[:5], indices[:5])
 
     adj = defaultdict(set)
     for u in tqdm(range(nb)):
         for j in range(k):
             v = int(indices[u, j])
             # No self loops, distance has to be within something.
-            if v != u and distances[u, j] < args.threshold:
+            if v != u and distances[u, j] < threshold:
                 adj[u].add(v)
                 # adj[v].add(u)
 
-    df = pd.read_csv(args.catalog)
-    df["title"] = df["title"].fillna("missing-title")
-    ids = df["id"].tolist()
-    titles = df["title"].tolist()
-    pairs = zip(ids, titles)
-    pairs = sorted(pairs, key=lambda x: int(x[0]))
+        # Write out links.bin
 
-    # metadata = dict(zip(ids, titles))
-    labels = [f"{id}-{title}" for id, title in pairs]
-
-    labels_path = os.path.join(args.output_dir, "labels.json")
-    with open(labels_path, "w+") as labels_fp:
-        json.dump(labels, labels_fp, indent=True,
-                  ensure_ascii=True, allow_nan=False)
-
-    # Write out links.bin
-
-    links_path = os.path.join(args.output_dir, "links.bin")
+    links_path = os.path.join(output_dir, "links.bin")
 
     # links.bin content (in numerical view, spaces are just for formatting):
     # Each record in the file is Int32 written in little-endian notation.
@@ -95,28 +92,56 @@ def main(args):
                 links_fp.write(struct.pack("<i", v))
 
 
+def generate_graph(args):
+
+    df = pd.read_csv(args.catalog_path)
+
+    # metadata = dict(zip(ids, titles))
+    labels = generate_label_data(
+        df, args.strong_column_names, args.target_name)
+
+    labels_path = os.path.join(args.output_dir, "labels.json")
+    with open(labels_path, "w+") as labels_fp:
+        json.dump(labels, labels_fp, indent=True,
+                  ensure_ascii=True, allow_nan=False)
+
+    generate_and_save_adj_matrix(
+        args.embed_path, args.threshold, args.neighbours, args.output_dir)
+
+
+def generate_graph_from_config(config_path):
+    with open(config_path, "r") as f:
+        config_data = json.load(f)
+        args = Namespace(**config_data)
+    process_args(args)
+    print(args)
+    generate_graph(args)
+
+
+def process_args(args):
+    args.output_dir = os.path.join(args.output_dir, "v"+str(args.version))
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
 
     parser.add_argument(
-        "--embed-path",
+        "--embed_path",
         type=str,
         required=True,
     )
 
     parser.add_argument("--neighbours", type=int, default=20)
     parser.add_argument("--threshold", type=float, default=10)
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        required=True,
-    )
+    parser.add_argument("--output_dir", type=str, required=True)
+    parser.add_argument("--version", type=str, required=True)
+    parser.add_argument("--catalog_path", type=str, required=True)
+    parser.add_argument("--strong_column_names",
+                        nargs="+", type=str)
+    parser.add_argument("--target_name", type=str, required=True)
 
-    parser.add_argument("--catalog", type=str, required=True)
-    # parser.add_argument("--config_path", type=str, required=True)
     args = parser.parse_args()
+    process_args(args)
 
-    # with open(args.config_path, "r") as f:
-    #     config_data = json.load(f)
-    #     args = Namespace(**config_data)
-    main(args)
+    print(args)
+    generate_graph(args)

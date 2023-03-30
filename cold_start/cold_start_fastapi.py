@@ -6,9 +6,32 @@ from starlette.responses import HTMLResponse, FileResponse
 from thirdai import bolt
 import os
 from starlette.staticfiles import StaticFiles
+from argparse import Namespace
+import json
 
+
+def init():
+    config_path = os.environ["config_path"]
+    with open(config_path, "r") as f:
+        config_data = json.load(f)
+        args = Namespace(**config_data)
+
+    network = bolt.UniversalDeepTransformer.load(args.model_path)
+    df = pd.read_csv(args.catalog_path)
+
+    df = df[args.strong_column_names + [args.target_name]]
+
+    for column in args.strong_column_names:
+        df[column] = df[column].fillna(f"missing value for {column} entry")
+
+    return network, df, args
+
+
+network, df, args = init()
+print(args)
 app = FastAPI()
-router = APIRouter(prefix='/stackoverflow')
+
+router = APIRouter(prefix=args.api_prefix)
 
 # Allowing cross-origin requests for demo-purposes. This allows the single-page
 # app to communicate with the API backend without getting 404s.
@@ -21,21 +44,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-network = bolt.UniversalDeepTransformer.load(os.environ["MODEL_PATH"])
-dataframe = pd.read_csv(os.environ["CATALOG_PATH"])
-
-# Use only few entries.
-# df = dataframe.iloc[:, [0, 1, 2]]
-df = dataframe[['id', 'title', 'question_body', 'answer_body']]
-
-# Empty description causes JSON encode-decode errors. We simply replace it
-# with (empty).
-df["question_body"] = df["question_body"].fillna("(empty)")
-df["answer_body"] = df["answer_body"].fillna("(empty)")
-
 
 def top_k_products(query: str, top_k: int):
-    result = network.predict({"query": query})
+    query = ' '.join([query[i:i+4] for i in range(len(query)-3)])
+    result = network.predict({args.query_column_name: query})
     #
     k = min(top_k, len(result) - 1)
     sorted_product_ids = result.argsort()[-k:][::-1]
@@ -96,8 +108,8 @@ print(os.path.join(GALAXY_DIR, "index.html"))
 app.include_router(router)
 
 
-app.mount("/stackoverflow/data",
+app.mount(f"{args.api_prefix}/data",
           StaticFiles(directory=DATA_DIR, html=True), name="data")
 
-app.mount("/stackoverflow", StaticFiles(directory=GALAXY_DIR,
+app.mount(f"{args.api_prefix}", StaticFiles(directory=GALAXY_DIR,
           html=True), name="frontend")
