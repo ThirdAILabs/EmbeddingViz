@@ -166,6 +166,8 @@ int main(int argc, const char *argv[]) {
     }
   }
 
+  std::cout<<"The ouptut dir is: "<<outputDir<<endl;
+
   save(outputDir + "/"+"positions.bin", graphLayout.getBodies());
 
   save_config(outputDir +"/layout_primitives");

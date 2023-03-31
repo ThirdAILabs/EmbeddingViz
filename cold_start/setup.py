@@ -61,7 +61,7 @@ def layout_generation(args):
     version = version = f"v{args.version}"
 
     output = subprocess.run(
-        f"cd {layout_dir}/build; ./layout {output_dir}/{version}/links.bin; mv positions.bin {output_dir}/{version}/positions.bin",
+        f"cd {layout_dir}/build; ./layout {output_dir}/{version}/links.bin {output_dir}/{version}",
         shell=True,
         capture_output=True
     )
