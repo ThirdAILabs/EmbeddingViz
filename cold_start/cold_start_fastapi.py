@@ -11,7 +11,7 @@ import json
 
 
 def init():
-    config_path = os.environ["config_path"]
+    config_path = "./bible_config.json"
     with open(config_path, "r") as f:
         config_data = json.load(f)
         args = Namespace(**config_data)
@@ -46,7 +46,10 @@ app.add_middleware(
 
 
 def top_k_products(query: str, top_k: int):
-    query = ' '.join([query[i:i+4] for i in range(len(query)-3)])
+    k_grams = args.k_grams
+    if args.k_grams:
+        query = ' '.join([query[i:i+k_grams]
+                         for i in range(len(query)-k_grams+1)])
     result = network.predict({args.query_column_name: query})
     #
     k = min(top_k, len(result) - 1)

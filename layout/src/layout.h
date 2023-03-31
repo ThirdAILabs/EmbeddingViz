@@ -37,9 +37,14 @@ public:
   void init(int *links, long linksSize, int *initialPositions, size_t posSize);
   void init(int *links, long size);
   void setBodiesWeight(int *weights);
+  void divideBodiesWeight (int divisor);
   bool step();
   size_t getBodiesCount();
-  vector<Body> *getBodies() { return &bodies; };
+  vector<Body> *getBodies() { 
+    vector<int> weights(bodies.size(), 1);
+    setBodiesWeight(weights.data());
+    return &bodies; 
+  };
 };
 
 #endif /* defined(__layout____layout__) */

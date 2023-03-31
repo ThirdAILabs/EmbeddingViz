@@ -14,6 +14,8 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
+from generate_adjacency_list import generate_adj_list
+
 # reload the embeddings
 
 
@@ -31,35 +33,14 @@ def generate_label_data(df, strong_column_names, target_name):
     return label_data
 
 
-def generate_and_save_adj_matrix(embed_path, threshold, neighbours, output_dir):
-    product_embeddings = np.load(embed_path)
+def save_adj_list(adjacency_list, neighbours,  output_dir):
+    nb = neighbours
 
-    import faiss
+    import pickle
 
-    nb, d = product_embeddings.shape
-    labels = []
-
-    index = faiss.IndexFlatL2(d)  # build the index
-
-    index.add(product_embeddings)  # add vectors to the index
-
-    # Since the element is part of the database, we want to add +1 to get n
-    # neighbours, first nearest will the self-connection.
-    k = neighbours + 1
-    k = min(k, nb)
-
-    distances, indices = index.search(product_embeddings, k)  # sanity check
-
-    adj = defaultdict(set)
-    for u in tqdm(range(nb)):
-        for j in range(k):
-            v = int(indices[u, j])
-            # No self loops, distance has to be within something.
-            if v != u and distances[u, j] < threshold:
-                adj[u].add(v)
-                # adj[v].add(u)
-
-        # Write out links.bin
+    adj_path = os.path.join(output_dir, "adj_list.pickle")
+    with open(adj_path, "wb") as f:
+        pickle.dump(adjacency_list, f)
 
     links_path = os.path.join(output_dir, "links.bin")
 
@@ -86,7 +67,7 @@ def generate_and_save_adj_matrix(embed_path, threshold, neighbours, output_dir):
         for _u in range(nb):
             u = _u + 1
             links_fp.write(struct.pack("<i", -1 * u))
-            for _v in adj[_u]:
+            for _v in adjacency_list[_u]:
                 # print(_u, _v)
                 v = _v + 1
                 links_fp.write(struct.pack("<i", v))
@@ -105,8 +86,9 @@ def generate_graph(args):
         json.dump(labels, labels_fp, indent=True,
                   ensure_ascii=True, allow_nan=False)
 
-    generate_and_save_adj_matrix(
-        args.embed_path, args.threshold, args.neighbours, args.output_dir)
+    adjacency_list = generate_adj_list(args)
+    save_adj_list(adjacency_list=adjacency_list,
+                  neighbours=args.neighbours, output_dir=args.output_dir)
 
 
 def generate_graph_from_config(config_path):

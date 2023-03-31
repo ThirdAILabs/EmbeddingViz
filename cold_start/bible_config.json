@@ -1,0 +1,28 @@
+{
+  "embed_path": "/share/copy_sid/EmbeddingViz/data/bible.npy",
+  "catalog_path": "/share/copy_sid/EmbeddingViz/data/train.csv",
+  "model_path": "/share/copy_sid/EmbeddingViz/data/bible.bolt",
+  "js_config_path": "/share/embeddings/scifact/EmbeddingViz/galaxy/src/config.js",
+  "neighbours": 50,
+  "threshold": 100,
+  "sparse_inference": true,
+  "columns_to_combine": [
+    "Passage",
+    "para"
+  ],
+  "k_grams": null,
+  "undirected_edges": true,
+  "indexer": "model",
+  "output_dir": "/share/embeddings/scifact/EmbeddingViz/data",
+  "version": 1,
+  "strong_column_names": [
+    "Passage"
+  ],
+  "target_name": "ID",
+  "query_column_name": "query",
+  "layout_dir": "/share/embeddings/scifact/EmbeddingViz/layout",
+  "galaxy_dir": "/share/embeddings/scifact/EmbeddingViz/galaxy",
+  "api_prefix": "/biblemodel",
+  "description": "Bible hehe",
+  "name": "Using model inferencing"
+}

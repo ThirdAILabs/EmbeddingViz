@@ -86,7 +86,7 @@ def generate_graphs(config_path):
 
 
 if __name__ == "__main__":
-    config_path = "/share/embeddings/copy_EmbeddingViz/EmbeddingViz/cold_start/config.json"
+    config_path = "./bible_config.json"
     with open(config_path, "r") as f:
         config_data = json.load(f)
         args = Namespace(**config_data)
