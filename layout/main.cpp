@@ -27,6 +27,20 @@ void save(const std::string &filename, std::vector<Body> *bodies) {
   outfile.close();
 }
 
+void save_config(const std::string &filename){
+  std::ofstream outfile(filename);
+
+  LayoutSettings setting = LayoutSettings();
+  outfile << "stableThreshold: "<< setting.stableThreshold<<endl;
+  outfile << "gravity: "<<setting.gravity<<endl;
+  outfile << "theta: "<<setting.theta<<endl;
+  outfile << "dragCoeff: "<<setting.dragCoeff<<endl;
+  outfile << "springCoeff: "<<setting.springCoeff<<endl;
+  outfile << "springLength: "<<setting.springLength<<endl;
+  outfile << "timeStep: "<<setting.timeStep<<endl;
+  outfile.close();
+}
+
 typedef struct {
   int *content;
   long size;
@@ -67,7 +81,7 @@ int getIterationNumberFromPositionFileName(const char *positionFileName) {
 }
 
 int main(int argc, const char *argv[]) {
-  if (argc < 2) {
+  if (argc < 3) {
     cout
         << "Usage: " << endl
         << "  " << argv[0] << " links.bin [positions.bin]" << endl
@@ -82,10 +96,15 @@ int main(int argc, const char *argv[]) {
         << "    This file should match `links.bin` graph, otherwise bad things "
         << endl
         << "    will happen" << endl;
+
+    cout << "We expect the second argument to be the output dir where we will dump the positions.bin files" << endl;
     return -1;
   }
 
   const char *graphFileName = argv[1];
+  std::cout<<"this is ok"<<endl;
+  string outputDir = argv[2];
+  std::cout<<"this is ok"<<endl;
   srand(42);
 
   char cwd[1024];
@@ -104,12 +123,12 @@ int main(int argc, const char *argv[]) {
 
   Layout graphLayout;
   int startFrom = 0;
-  if (argc < 3) {
+  if (argc < 4) {
     graphLayout.init(graphFile.content, graphFile.size);
     cout << "Done. " << endl;
     cout << "Loaded " << graphLayout.getBodiesCount() << " bodies;" << endl;
   } else {
-    const char *posFileName = argv[2];
+    const char *posFileName = argv[3];
     startFrom = getIterationNumberFromPositionFileName(posFileName);
     cout << "Loading positions from " << posFileName << "... ";
     FileContent *positions = readFile(posFileName);
@@ -142,12 +161,14 @@ int main(int argc, const char *argv[]) {
       cout << "Done!" << endl;
       break;
     }
-    if (i % 5 == 0) {
-      save(std::to_string(i) + ".bin", graphLayout.getBodies());
+    if (i % 500 == 0) {
+      save(outputDir + "/"+std::to_string(i) + ".bin", graphLayout.getBodies());
     }
   }
 
-  save("positions.bin", graphLayout.getBodies());
+  save(outputDir + "/"+"positions.bin", graphLayout.getBodies());
+
+  save_config(outputDir +"/layout_primitives");
 
   delete[] graphFile.content;
 }
