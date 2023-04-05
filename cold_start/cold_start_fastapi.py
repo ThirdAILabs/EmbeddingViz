@@ -11,7 +11,7 @@ import json
 
 
 def init():
-    config_path = "./bible_config.json"
+    config_path = os.environ["CONFIG_PATH"]
     with open(config_path, "r") as f:
         config_data = json.load(f)
         args = Namespace(**config_data)
