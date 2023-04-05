@@ -121,7 +121,8 @@ if __name__ == "__main__":
     parser.add_argument("--strong_column_names",
                         nargs="+", type=str)
     parser.add_argument("--target_name", type=str, required=True)
-
+    parser.add_argument("--indexer", type=str, required=True)
+    parser.add_argument("--undirected_edges", type=bool, required=True)
     args = parser.parse_args()
     process_args(args)
 

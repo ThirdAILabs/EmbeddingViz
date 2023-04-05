@@ -16,10 +16,11 @@ The source is organized as follows.
 cold_start/ # Using `thirdai` for inference and datagen (Python)
 galaxy/     # Visualization frontend (mostly JS)
 layout/     # layout algorithm for graph (C++)
+data/       # Contains the manifest file and other data¯
 ```
 
-## Development
 
+## Dependencies
 We integrate the product search using query from an available catalog to the
 search-bar for purposes of a demonstration. The frontend view is a single-page
 app, adapted from [anvaka/pm](https://github.com/anvaka/pm). The backend is
@@ -34,16 +35,6 @@ python3 -m venv env
 python3 -m pip install fastapi uvicorn
 ```
 
-Following installation, a development server can be spawned by running:
-
-```bash
-cd cold_start 
-MODEL_PATH=/path/to/model CATALOG_PATH=/path/to/catalog uvicorn cold_start_fastapi:app 
-```
-
-Use the parameters after launch (host, port) to update the `apiUrl` in
-frontend's [config.js](galaxy/src/config.js).
-
 **Frontend** Development follows [anvaka/pm](https://github.com/anvaka/pm) to
 use the node ecosystem. For the development requirements, please do a
 clean-install via npm, which will fetch dependencies from
@@ -51,34 +42,39 @@ clean-install via npm, which will fetch dependencies from
 
 ```bash
 cd galaxy
-npm ci # clean-install
-node dev-server.js # Spawns a development server
+sudo apt-get install npm
 ```
 
+## Manual Setup
+This section goes over how you can manually setup the galaxy app for serving your data. For automatic setup, go to Automatic Setup Section.
 ### Generating data
 
 Data can be generated from an existing embedding save using [generate_graph.py](./cold_start/generate_graph.py).
 
 ```bash
 # Tweak neighbours and threshold to get a good force-layout.
-python3 cold_start/generate_graph.py --catalog /path-to-catalog \
+python3 cold_start/generate_graph.py --catalog_path /path-to-catalog \
     --embed-path /path/to/embed                                 \
     --output-dir /path/to/output-dir                            \
     --neighbours 20 --threshold 20
+    --version 1 --strong_column_names ["Title"]
+    --target_name "Id" --indexer faiss --undirected_edges False
 ```
 
-This will create `links.bin` and `labels.json` in `/path/to/output-dir/`. This
+Note: Manual setup works only when the indexer is faiss. Due to a large number of hyperparameters used for model indexing, automatic setup should be used for model indexing. 
+
+This will create `links.bin` and `labels.json` in `/path/to/output-dir/v{version}`. This
 is consumed by the visualization. More details on how to organize this is given
 below.
 
 ### Serving data
 
-Data is expected to be served independently from a static source. This can be
-configured in [config.js](galaxy/src/config.js) as `dataUrl`. A visualization
-requires the following files, taking the example of `amazon-kaggle`:
+Data is expected to be served from a static source. In the cold_start/cold_start_fastapi.py file, we load the data folder with the address as `/api_prefix/data`. The `dataUrl` becomes `/api_prefix/` and this has to be
+set in [config.js](galaxy/src/config.js) as `dataUrl` so that the galaxy app can load data from the directory and serve it. A visualization
+requires the following files, taking the example of `data`:
 
 ```bash
-amazon-kaggle
+data
 ├── manifest.json
 ├── v1
 │   ├── labels.json    # holds labels (string Ids)
@@ -89,17 +85,6 @@ amazon-kaggle
 
 For more information see
 [anvaka/pm#data-format](https://github.com/anvaka/pm#data-format).
-
-The data can be served from the above root folder using a local HTTP server.
-Using node ecosystem, one way of doing this is as follows.
-
-```
-npm install -g http-server
-http-server --cors -p 8081
-```
-
-Use the parameters (host, port) here to update [config.js](galaxy/src/config.js)
-with the suitable `dataUrl`.
 
 
 ### Layout generation
@@ -119,13 +104,95 @@ cmake ..
 make -j3
 ```
 
-For `amazon-kaggle` with the directly structure described before. This process
+For `data` with the directly structure described before. This process
 can take a while, depending on the size of your graph.
 
 ```bash
-./layout amazon-kaggle/v1/links.bin
-mv positions.bin amazon-kaggle/v1/positions.bin 
+./layout data/v1/links.bin
+mv positions.bin data/v1/positions.bin 
 ```
 
+### Starting the server
+
+Once the graph and the layout has been generated, we can build our frontend. We first have to modify the [config.js](galaxy/src/config.js) file. 
+
+The variables in the config file are: 
+1. dataUrl : `/api_prefix/`
+2. apiUrl  : `/api_prefix/predict`
+3. target_name
+4. strong_column_names
+5. description : Description of the visualization
+6. name : The name of the visualization 
+   
+Once config file has been modified, run :
+```bash
+cd galaxy
+npm ci
+```
+
+Following building the frontend, a development server can be spawned by running:
+
+```bash
+cd cold_start 
+MODEL_PATH=/path/to/model CATALOG_PATH=/path/to/catalog uvicorn cold_start_fastapi:app 
+```
+
+The predict api is loaded onto the endpoint `/api_prefix/predict`
+
+The app `cold_start_fastapi:app` is the app responsible for serving the data, getting predictions from the model, and visualization for the users.
 
 
+## Automatic Setup
+Installing the dependencies is a pre-req for this section. 
+
+This is purely a config driven approach for setup. 
+
+Make a file called config.json that has the following elements:
+1. catalog_path
+2. model_path
+3. js_config_path : path to frontend config.js file ( galaxy/src/config.js ). 
+4. output_dir : Should follow the directory structure as mentioned at the top
+5. version
+6. galaxy_dir : galaxy
+7. layout_dir : layout
+8. name
+9. description
+10. api_prefix
+11. query_column_name
+12. target_name
+13. strong_column_names
+14. indexer : model or faiss
+15. undirected_edges : true or false
+16. k_grams : int or None
+17. columns_to_combine : list of columns if indexer is model. These columns are concatenanted and then passed to model for inference 
+18. sparse_inference : true or false if indexer is model. else not needed
+19. neighbours 
+20. threshold
+20. embed_path
+
+In the setup.sh file, set the value of the variable `CONFIG_PATH`. Run the setup file.
+
+```bash
+cd cold_start
+python3 setup.py
+uvicorn cold_start_fastapi:app --reload --port 80xx
+```
+
+This will generate the graph and the layout for the file, build the frontend, and run the visualization server. 
+
+
+## Exposing the port using nginx
+
+Go to /etc/nginx/sites-available/default and add 
+
+```json
+location /api_prefix {
+		proxy_pass http://127.0.0.1:80xx/api_prefix;
+	}
+```
+tp the file and then 
+```bash
+sudo systemctl restart nginx
+```
+
+This will expose your app to TCP traffic.
