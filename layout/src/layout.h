@@ -41,8 +41,6 @@ public:
   bool step();
   size_t getBodiesCount();
   vector<Body> *getBodies() { 
-    vector<int> weights(bodies.size(), 1);
-    setBodiesWeight(weights.data());
     return &bodies; 
   };
 };
