@@ -10,6 +10,7 @@ from argparse import Namespace
 import json
 
 
+# Config path must be setup in the environment.
 def init():
     config_path = os.environ["CONFIG_PATH"]
     with open(config_path, "r") as f:
@@ -100,6 +101,19 @@ async def predict(query: str, k: int):
     return {"Result": result, "Status": status, "Message": message}
 
 
+'''
+The directory structure should be:
+EmbeddingViz
+    - cold_start
+    - data
+        - v1
+            -links.bin
+            -positions.bin
+            -labels.json
+        manifest.json
+    - galaxy
+    - layout
+'''
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATA_DIR = os.path.join(ROOT_DIR, "..", "data")
