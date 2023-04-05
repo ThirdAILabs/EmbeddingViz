@@ -27,6 +27,7 @@ void save(const std::string &filename, std::vector<Body> *bodies) {
   outfile.close();
 }
 
+// This saves the hyperparameters in primitive.h as a text file  
 void save_config(const std::string &filename){
   std::ofstream outfile(filename);
 
