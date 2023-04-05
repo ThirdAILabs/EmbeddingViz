@@ -99,6 +99,7 @@ def get_adj_list_from_faiss(args):
     # 1. embed_path
     # 2. threshold
     # 3. neighbours
+    # 4. undirected_edges
     product_embeddings = np.load(args.embed_path)
 
     import faiss
