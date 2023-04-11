@@ -23,7 +23,7 @@ function update_samples(response) {
             console.log(config.strong_column_names[column]);
             query = query + "-" + results[i][config.strong_column_names[column]];
         }
-        console.log(query); d
+        console.log(query);
         var search_results = scene.find(query);
         console.log(search_results);
         if (search_results.length > 0) {
