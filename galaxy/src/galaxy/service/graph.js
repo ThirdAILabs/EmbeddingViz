@@ -49,10 +49,10 @@ function graph(rawGraphLoaderData) {
         var regex = compileRegex(str);
         if (!regex) return no;
 
-        return function(i, labels, outLinks, inLinks, pos) {
+        return function (i, labels, outLinks, inLinks, pos) {
             var label = labels[i];
             if (typeof label === 'string') {
-                return label.match(regex);
+                return label == str;
             }
             return label.toString().match(regex);
         }

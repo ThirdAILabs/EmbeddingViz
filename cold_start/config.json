@@ -1,0 +1,28 @@
+{
+  "embed_path": "/share/embeddings/data/food/embeddings.npy",
+  "catalog_path": "/share/embeddings/data/food/recipes.csv",
+  "model_path": "/share/embeddings/data/food/model.bolt",
+  "js_config_path": "/share/embeddings/scifact/EmbeddingViz/galaxy/src/config.js",
+  "neighbours": 100,
+  "threshold": 200,
+  "sparse_inference": true,
+  "columns_to_combine": [
+    "RecipeIngredientParts",
+    "Name"
+  ],
+  "k_grams": 4,
+  "undirected_edges": false,
+  "indexer": "model",
+  "output_dir": "/share/embeddings/scifact/EmbeddingViz/data",
+  "version": 1,
+  "strong_column_names": [
+    "Name"
+  ],
+  "target_name": "RecipeId",
+  "query_column_name": "Name",
+  "layout_dir": "/share/embeddings/scifact/EmbeddingViz/layout",
+  "galaxy_dir": "/share/embeddings/scifact/EmbeddingViz/galaxy",
+  "api_prefix": "/food",
+  "description": "Cold Start Model for food recipes scraped from food.com. This model returns the recipes that matches with your queries the best.",
+  "name": "Food Recipes Search"
+}
