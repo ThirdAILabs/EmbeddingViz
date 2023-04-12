@@ -1,0 +1,4 @@
+numpy
+streamlit
+plotly
+scikit-learn
